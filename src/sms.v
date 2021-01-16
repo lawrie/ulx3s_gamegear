@@ -64,17 +64,21 @@ module sms
   wire joypad_0_port = cpuAddress[7:6] == 3 && !cpuAddress[0];
   wire joypad_1_port = cpuAddress[7:6] == 3 && cpuAddress[0];
 
-  wire mem_ctrl_port = cpuAddress[7:6] == 0 && !cpuAddress[0];
-  wire joypad_ctrl_port = cpuAddress[7:6] == 0 && cpuAddress[0];
+  wire mem_ctrl_port = cpuAddress[7:5] == 1 && !cpuAddress[0];
+  wire joypad_ctrl_port = cpuAddress[7:5] == 1 && cpuAddress[0];
 
   wire v_counter_port = cpuAddress[7:6] == 1 && !cpuAddress[0];
   wire h_counter_port = cpuAddress[7:6] == 1 && cpuAddress[0];
+
+  wire gg_port = cpuAddress[7:6] == 0 && cpuAddress[2:0] == 2;
 
   wire [7:0] v_counter;
   wire [7:0] h_counter;
 
   reg [7:0] r_mem_ctrl;
   reg [7:0] r_joy_ctrl;
+
+  reg r_gg;
 
   // pull-ups for us2 connector 
   assign usb_fpga_pu_dp = 1;
@@ -397,6 +401,8 @@ module sms
         r_mem_ctrl <= cpuDataOut; // Memory control write
       end else if (joypad_ctrl_port && n_ioWR == 1'b0) begin
         r_joy_ctrl <= cpuDataOut;
+      end else if (gg_port && n_ioWR == 1'b0) begin
+        r_gg <= cpuDataOut;
       end
 
       if (cpuAddress == 16'hfffc && n_memWR == 1'b0) mem_misc <= cpuDataOut;
@@ -518,6 +524,7 @@ module sms
                       // V and H counters
                       v_counter_port && n_ioRD == 1'b0 ? v_counter :
                       h_counter_port && n_ioRD == 1'b0 ? h_counter :
+                      gg_port && n_ioRD == 1'b0 ? r_gg :
                       cpuAddress[15:14] < 3 && n_memRD == 1'b0 ? 
                         (r_mem_ctrl[3] == 0 ? biosOut : romOut) : ramOut;
 
@@ -659,6 +666,6 @@ module sms
   // ===============================================================
   assign led = {pc[15:14], !n_hard_reset, mode};
 
-  always @(posedge cpuClock) diag16 <= {joy_data0, r_joy_ctrl};
+  always @(posedge cpuClock) diag16 <= pc;
 
 endmodule

@@ -1,5 +1,5 @@
 #!/bin/sh
-git remote add upstream https://github.com/lawrie/ulx3s_sms.git
+git remote add upstream https://github.com/lawrie/ulx3s_gamegear.git
 git fetch upstream
 git checkout master
 git merge upstream/master
